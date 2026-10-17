@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>우리 어디 가지?</title>
+  <meta name="description" content="가고 싶은 국내 여행지를 골라 룰렛으로 정하는 랜덤 여행 앱">
+  <meta name="theme-color" content="#ffc2d1">
+  <meta name="color-scheme" content="light">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="어디가지">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="hero">
+    <div class="hero-top">
+      <div>
+        <p class="hero-kicker">랜덤 국내여행 룰렛</p>
+        <h1 class="hero-title">우리 어디 가지?</h1>
+      </div>
+      <div class="hero-btns">
+        <button id="installBtn" class="icon-btn" type="button" aria-label="홈 화면에 추가" hidden>📲</button>
+        <button id="settingsBtn" class="icon-btn" type="button" aria-label="설정">⚙️</button>
+      </div>
+    </div>
+    <div class="hero-friends">
+      <span class="bubble bubble-left">어디 갈까?</span>
+      <span class="char char-hero bob-1" data-char="hachiware" data-mood="normal"></span>
+      <span class="char char-hero char-hero-main bob-2" data-char="chiikawa" data-mood="happy"></span>
+      <span class="char char-hero bob-3" data-char="usagi" data-mood="happy"></span>
+      <span class="bubble bubble-right">가자~!</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- 룰렛 -->
+    <section id="sec-roulette" class="section">
+      <div class="card plan-card">
+        <div class="card-title">
+          <h2>🚩 우리 어디 가기로 했지?</h2>
+        </div>
+        <div id="planned" class="planned"></div>
+      </div>
+
+      <div class="card wheel-card">
+        <div class="card-title">
+          <h2>🎡 여행지 룰렛</h2>
+          <span class="badge" id="candCount">0곳</span>
+        </div>
+
+        <div class="wheel-wrap">
+          <svg class="wheel-pointer" id="wheelPointer" viewBox="0 0 40 46" aria-hidden="true">
+            <path d="M20 43 L5 14 Q3 5 12 3 L28 3 Q37 5 35 14 Z" fill="#ff8fab" stroke="#4a3a33" stroke-width="3" stroke-linejoin="round"/>
+            <circle cx="20" cy="13" r="4.5" fill="#fff"/>
+          </svg>
+          <canvas id="wheel" width="300" height="300" aria-label="여행지 룰렛"></canvas>
+          <button class="wheel-hub" id="hubBtn" type="button" aria-label="룰렛 돌리기">
+            <span class="char" data-char="chiikawa" data-mood="normal"></span>
+          </button>
+          <div class="wheel-empty" id="wheelEmpty" hidden>
+            <span class="char char-md" data-char="chiikawa" data-mood="cry"></span>
+            <p>리스트에서 가고 싶은 곳을<br><b>2곳 이상</b> 골라줘…!</p>
+          </div>
+          <span class="char wheel-peek" data-char="usagi" data-mood="wow" aria-hidden="true"></span>
+        </div>
+
+        <div class="live-label" id="liveLabel">두근두근… 어디가 나올까?</div>
+        <button class="btn btn-spin" id="spinBtn" type="button">룰렛 돌리기!</button>
+
+        <label class="switch-row">
+          <span class="switch-text"><b>가봤음</b> 여행지도 룰렛에 넣기</span>
+          <input type="checkbox" id="includeVisited">
+          <span class="switch" aria-hidden="true"></span>
+        </label>
+        <p class="hint" id="candHint"></p>
+      </div>
+    </section>
+
+    <!-- 리스트 -->
+    <section id="sec-list" class="section">
+      <div class="card list-card">
+        <div class="card-title">
+          <h2>📋 여행지 리스트</h2>
+          <span class="char char-xs" data-char="hachiware" data-mood="happy" aria-hidden="true"></span>
+        </div>
+        <p class="sub">인기 순으로 정렬했어요. <b>체크한 곳</b>이 룰렛에 들어가요!</p>
+
+        <div class="tabs" id="tabs" role="tablist">
+          <button class="tab" type="button" role="tab" data-filter="all">전체 <i></i></button>
+          <button class="tab" type="button" role="tab" data-filter="visited">가봤음 <i></i></button>
+          <button class="tab" type="button" role="tab" data-filter="notyet">안가봤음 <i></i></button>
+          <button class="tab" type="button" role="tab" data-filter="planned">갈거임 <i></i></button>
+        </div>
+
+        <div class="search">
+          <span aria-hidden="true">🔍</span>
+          <input type="search" id="search" placeholder="여행지 검색 (예: 강릉, 경북)" autocomplete="off">
+        </div>
+
+        <div class="list-bar">
+          <button id="selectAll" class="btn btn-small" type="button">전체선택</button>
+          <span class="sel-count" id="selCount"></span>
+        </div>
+
+        <ul class="place-list" id="placeList"></ul>
+        <nav class="pager" id="pager" aria-label="페이지"></nav>
+      </div>
+    </section>
+
+    <!-- 가봤음 앨범 -->
+    <section id="sec-album" class="section">
+      <div class="card album-wrap">
+        <div class="card-title">
+          <h2>📷 가봤음 앨범</h2>
+          <span class="char char-xs" data-char="usagi" data-mood="happy" aria-hidden="true"></span>
+        </div>
+        <div class="conquer" id="conquer"></div>
+        <div class="album-grid" id="album"></div>
+        <button type="button" class="btn btn-small album-backup" id="albumBackup">💾 추억 백업하기</button>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <span class="char char-xs" data-char="chiikawa" data-mood="normal" aria-hidden="true"></span>
+      <p>기록은 이 기기에만 저장돼요 · 순위는 인기도를 바탕으로 한 대략적인 순서예요</p>
+    </footer>
+  </main>
+
+  <nav class="bottom-nav" id="bottomNav" aria-label="바로가기">
+    <button type="button" data-target="sec-roulette"><span>🎡</span>룰렛</button>
+    <button type="button" data-target="sec-list"><span>📋</span>리스트</button>
+    <button type="button" data-target="sec-album"><span>📷</span>가봤음</button>
+  </nav>
+</div>
+
+<!-- 룰렛 결과 -->
+<div class="modal" id="resultModal" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-card result-card" role="dialog" aria-modal="true" aria-labelledby="resultName">
+    <button class="modal-x" type="button" data-close aria-label="닫기">×</button>
+    <div class="result-friends">
+      <span class="char char-md bob-1" data-char="hachiware" data-mood="happy"></span>
+      <span class="char char-md bob-2" data-char="chiikawa" data-mood="happy"></span>
+      <span class="char char-md bob-3" data-char="usagi" data-mood="happy"></span>
+    </div>
+    <p class="result-kicker">이번 여행지는…!</p>
+    <div class="result-emoji" id="resultEmoji"></div>
+    <h3 class="result-name" id="resultName"></h3>
+    <p class="result-desc" id="resultDesc"></p>
+    <div class="result-actions">
+      <button class="btn btn-ghost" type="button" id="againBtn">한 번 더!</button>
+      <button class="btn btn-primary" type="button" id="locateBtn">리스트에서 보기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 여행 기록 -->
+<div class="sheet" id="recordSheet" hidden>
+  <div class="sheet-backdrop" data-close></div>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <span class="sheet-emoji" id="sheetEmoji"></span>
+      <div class="sheet-head-text">
+        <h3 id="sheetTitle"></h3>
+        <p id="sheetSub"></p>
+      </div>
+      <span class="char char-sm" data-char="hachiware" data-mood="happy" aria-hidden="true"></span>
+    </div>
+    <div class="sheet-status">
+      <button type="button" class="pill pill-visited" id="draftVisited">👣 가봤음</button>
+      <button type="button" class="pill pill-planned" id="draftPlanned">🚩 갈거임</button>
+    </div>
+    <label class="field">
+      <span class="field-label" id="dateLabel">📅 날짜</span>
+      <input type="date" id="recDate">
+    </label>
+    <label class="field">
+      <span class="field-label">📝 메모</span>
+      <textarea id="recMemo" rows="3" maxlength="500" placeholder="맛있었던 것, 좋았던 곳, 다음에 또 하고 싶은 것…"></textarea>
+    </label>
+    <div class="field">
+      <span class="field-label">📷 사진</span>
+      <div class="photo-grid" id="photoGrid"></div>
+      <input type="file" id="photoInput" accept="image/*" multiple hidden>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" type="button" data-close>닫기</button>
+      <button class="btn btn-primary" type="button" id="recSave">저장하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 설정 -->
+<div class="sheet" id="settingsSheet" hidden>
+  <div class="sheet-backdrop" data-close></div>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="sheet-handle"></div>
+    <h3 class="settings-title" id="settingsTitle">⚙️ 설정</h3>
+
+    <section class="settings-sec" id="backupSec">
+      <h4>💾 백업 · 복원</h4>
+      <p class="settings-sub">가봤음·갈거임·사진·메모·캐릭터 그림을 <b>파일 하나</b>로 저장해요. iCloud Drive나 구글 드라이브에 보관해 두면 폰을 바꿔도 되살릴 수 있어요.</p>
+      <div class="backup-status" id="backupStatus"></div>
+      <div class="backup-btns">
+        <button type="button" class="btn btn-primary" id="backupBtn">백업 파일 만들기</button>
+        <label class="btn btn-ghost file-btn">복원하기<input type="file" id="restoreInput"></label>
+      </div>
+      <div class="backup-ready" id="backupReady" hidden>
+        <p id="backupReadyText"></p>
+        <button type="button" class="btn btn-primary" id="backupSave">파일 저장하기</button>
+      </div>
+      <p class="settings-tiny" id="storageInfo"></p>
+    </section>
+
+    <section class="settings-sec">
+      <h4>🎨 캐릭터 그림</h4>
+      <p class="settings-sub">칸을 눌러 그림을 넣어요. 크기가 제각각이어도 투명한 여백을 잘라내고 같은 크기로 맞춰 줘요. 배경이 투명한 PNG가 제일 예뻐요.</p>
+      <div class="char-slots" id="charSlots"></div>
+    </section>
+
+    <div class="settings-note">
+      <b>📲 폰 홈 화면에 앱처럼 추가하기</b><br>
+      아이폰: Safari 공유 버튼 → <b>홈 화면에 추가</b><br>
+      안드로이드: Chrome 메뉴(⋮) → <b>홈 화면에 추가</b> 또는 <b>앱 설치</b><br>
+      <span class="settings-tiny">아이폰은 홈 화면 앱과 Safari의 기록이 따로 저장돼요. 추가한 뒤에는 꼭 홈 화면 아이콘으로 열어 주세요.</span>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-primary" type="button" data-close>닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 사진 크게 보기 -->
+<div class="lightbox" id="lightbox" hidden>
+  <img id="lightboxImg" alt="여행 사진">
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="confetti" id="confetti" aria-hidden="true"></div>
+
+<script src="js/data.js"></script>
+<script src="js/char-images.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/characters.js"></script>
+<script src="js/backup.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

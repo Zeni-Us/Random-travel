@@ -1,0 +1,17 @@
+{
+  "name": "우리 어디 가지? - 랜덤 국내여행 룰렛",
+  "short_name": "어디가지",
+  "description": "가고 싶은 국내 여행지를 골라 룰렛으로 정하는 랜덤 여행 앱",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff7ef",
+  "theme_color": "#ffc2d1",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
