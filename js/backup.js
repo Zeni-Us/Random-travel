@@ -9,6 +9,7 @@
   const DAY = 86400000;
   const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
   const PHOTO_RE = /^p_[a-z0-9]+$/;
+  const TIME_RE = /^\d{2}:\d{2}$/;
   const pad = (n) => String(n).padStart(2, "0");
 
   /* ---------- 백업 기록 (마지막 백업 시각, 마지막 변경 시각) ---------- */
@@ -101,13 +102,54 @@
         const ph = r.photos.filter((x) => typeof x === "string" && PHOTO_RE.test(x));
         if (ph.length) o.photos = ph;
       }
+      const plan = sanitizePlan(r.plan);
+      if (plan) o.plan = plan;
+      const cost = sanitizeCost(r.cost);
+      if (cost) o.cost = cost;
       places[id] = o;
     });
+    const strings = (a) => (Array.isArray(a) ? a.filter((x) => typeof x === "string").slice(0, 20) : []);
+    const f = raw.facets && typeof raw.facets === "object" ? raw.facets : {};
     return {
       places,
       includeVisited: raw.includeVisited === true,
-      filter: ["all", "visited", "notyet", "planned"].includes(raw.filter) ? raw.filter : "all"
+      filter: ["all", "visited", "notyet", "planned"].includes(raw.filter) ? raw.filter : "all",
+      mapApp: raw.mapApp === "kakao" ? "kakao" : "naver",
+      facets: { areas: strings(f.areas), tiers: strings(f.tiers), types: strings(f.types) } // 앱이 다시 한번 걸러요
     };
+  }
+
+  // 일정표: [{ stops: [{ t: "HH:MM", p: 장소, m: 메모 }] }] — 최대 30일, 하루 50곳
+  function sanitizePlan(plan) {
+    if (!Array.isArray(plan)) return null;
+    const str = (v, n) => (typeof v === "string" ? v.slice(0, n) : "");
+    const days = plan.slice(0, 30).map((d) => ({
+      stops: (d && Array.isArray(d.stops) ? d.stops : []).slice(0, 50).map((s) => {
+        const o = {
+          t: s && typeof s.t === "string" && TIME_RE.test(s.t) ? s.t : "",
+          p: str(s && s.p, 60),
+          m: str(s && s.m, 120)
+        };
+        // 지도 링크는 http(s) 주소만 (javascript: 같은 건 버려요)
+        if (s && typeof s.u === "string" && /^https?:\/\//i.test(s.u) && s.u.length <= 500) o.u = s.u;
+        return o;
+      }).filter((s) => s.t || s.p || s.m || s.u)
+    }));
+    while (days.length && !days[days.length - 1].stops.length) days.pop();
+    return days.length ? days : null;
+  }
+
+  // 쓴 돈 / 예상 예산 (원): 교통 tr · 숙박 st · 식비 fd · 관광·체험 ac · 쇼핑·기타 et · 인원 ppl
+  function sanitizeCost(c) {
+    if (!c || typeof c !== "object") return null;
+    const o = {};
+    ["tr", "st", "fd", "ac", "et"].forEach((k) => {
+      const n = Math.round(Number(c[k]));
+      if (Number.isFinite(n) && n > 0) o[k] = Math.min(n, 9999999999);
+    });
+    const ppl = Math.round(Number(c.ppl));
+    if (Number.isFinite(ppl) && ppl > 1) o.ppl = Math.min(ppl, 50);
+    return Object.keys(o).length ? o : null;
   }
 
   const isImageData = (v) => typeof v === "string" && v.startsWith("data:image/");

@@ -1,5 +1,5 @@
 /* 오프라인에서도 열리도록 앱 파일을 저장해 두는 서비스 워커 */
-const CACHE = "wheretogo-v2";
+const CACHE = "wheretogo-v4";
 const SHELL = [
   "./",
   "index.html",
@@ -9,6 +9,7 @@ const SHELL = [
   "js/storage.js",
   "js/characters.js",
   "js/backup.js",
+  "js/trip-tools.js",
   "js/app.js",
   "manifest.webmanifest",
   "icons/icon-192.png",

@@ -102,10 +102,37 @@
           <button class="tab" type="button" role="tab" data-filter="planned">갈거임 <i></i></button>
         </div>
 
-        <div class="search">
-          <span aria-hidden="true">🔍</span>
-          <input type="search" id="search" placeholder="여행지 검색 (예: 강릉, 경북)" autocomplete="off">
+        <div class="search-row">
+          <div class="search">
+            <span aria-hidden="true">🔍</span>
+            <input type="search" id="search" placeholder="검색 (예: 강릉, 바다)" autocomplete="off">
+          </div>
+          <button type="button" class="filter-btn" id="filterBtn" aria-expanded="false" aria-controls="facets">필터 <b id="filterCount" hidden></b></button>
         </div>
+
+        <div class="facets" id="facets" hidden>
+          <div class="facet">
+            <span class="facet-label">📍 지역</span>
+            <div class="chips" data-facet="areas"></div>
+          </div>
+          <div class="facet">
+            <span class="facet-label">💸 예산 <small>1박 2일 · 1인</small></span>
+            <div class="chips" data-facet="tiers"></div>
+          </div>
+          <div class="facet">
+            <span class="facet-label">🎒 여행 유형</span>
+            <div class="chips" data-facet="types"></div>
+          </div>
+          <details class="budget-info">
+            <summary>예산은 어떻게 정했나요?</summary>
+            <p><b>1박 2일 · 1인 기준 현지 경비 추정치</b>예요. 숙박(2인 1실을 둘이 나눠 낸다고 보고), 식비, 현지 교통·입장료·체험비를 더했고 <b>오가는 교통비는 빠져 있어요.</b></p>
+            <p>2025 국민여행조사의 숙박여행 1회 평균 지출(22.1만원, 교통비 약 21% 포함)과 지출 비중, 주요 여행지 숙박비 지수, 제주 방문관광객 실태조사 등을 바탕으로 여행지 특성(섬·리조트·대게 같은 비싼 먹거리 등)에 맞춰 조정한 <b>대략적인 값</b>이에요. 계절과 숙소에 따라 꽤 달라질 수 있어요.</p>
+          </details>
+          <div class="facet-foot">
+            <button type="button" class="link-btn" id="facetReset">필터 초기화</button>
+          </div>
+        </div>
+        <div class="active-facets" id="activeFacets"></div>
 
         <div class="list-bar">
           <button id="selectAll" class="btn btn-small" type="button">전체선택</button>
@@ -157,6 +184,7 @@
     <div class="result-emoji" id="resultEmoji"></div>
     <h3 class="result-name" id="resultName"></h3>
     <p class="result-desc" id="resultDesc"></p>
+    <div class="map-box" id="resultMaps"></div>
     <div class="result-actions">
       <button class="btn btn-ghost" type="button" id="againBtn">한 번 더!</button>
       <button class="btn btn-primary" type="button" id="locateBtn">리스트에서 보기</button>
@@ -177,6 +205,7 @@
       </div>
       <span class="char char-sm" data-char="hachiware" data-mood="happy" aria-hidden="true"></span>
     </div>
+    <div class="map-box" id="sheetMaps"></div>
     <div class="sheet-status">
       <button type="button" class="pill pill-visited" id="draftVisited">👣 가봤음</button>
       <button type="button" class="pill pill-planned" id="draftPlanned">🚩 갈거임</button>
@@ -185,15 +214,82 @@
       <span class="field-label" id="dateLabel">📅 날짜</span>
       <input type="date" id="recDate">
     </label>
-    <label class="field">
-      <span class="field-label">📝 메모</span>
-      <textarea id="recMemo" rows="3" maxlength="500" placeholder="맛있었던 것, 좋았던 곳, 다음에 또 하고 싶은 것…"></textarea>
-    </label>
-    <div class="field">
-      <span class="field-label">📷 사진</span>
-      <div class="photo-grid" id="photoGrid"></div>
-      <input type="file" id="photoInput" accept="image/*" multiple hidden>
+
+    <div class="sheet-tabs" id="sheetTabs" role="tablist">
+      <button type="button" class="sheet-tab" role="tab" data-pane="memo">📝 기록</button>
+      <button type="button" class="sheet-tab" role="tab" data-pane="plan">🗓 일정표</button>
+      <button type="button" class="sheet-tab" role="tab" data-pane="cost">💸 예산</button>
     </div>
+
+    <div class="sheet-pane" data-pane="memo">
+      <label class="field">
+        <span class="field-label">📝 메모</span>
+        <textarea id="recMemo" rows="3" maxlength="500" placeholder="맛있었던 것, 좋았던 곳, 다음에 또 하고 싶은 것…"></textarea>
+      </label>
+      <div class="field">
+        <span class="field-label">📷 사진</span>
+        <div class="photo-grid" id="photoGrid"></div>
+        <input type="file" id="photoInput" accept="image/*" multiple hidden>
+      </div>
+    </div>
+
+    <div class="sheet-pane" data-pane="plan" hidden>
+      <div class="plan-tools">
+        <button type="button" class="tool-btn" id="pasteToggle" aria-expanded="false" aria-controls="pastePanel">📋 지도 장소 붙여넣기</button>
+        <button type="button" class="tool-btn" id="aiToggle" aria-expanded="false" aria-controls="aiPanel">🤖 AI로 일정 짜기</button>
+      </div>
+
+      <div class="tool-panel" id="pastePanel" hidden>
+        <p class="pane-hint">네이버지도·카카오맵에서 장소를 <b>공유 → 복사</b>한 뒤 붙여넣어요. <b>여러 곳을 한꺼번에</b> 붙여도 하나씩 나눠 줘요.</p>
+        <button type="button" class="btn btn-small btn-ghost clip-btn" id="pasteFromClip">📋 복사한 내용 가져오기</button>
+        <textarea id="pasteBox" rows="3" placeholder="여기에 길게 눌러 붙여넣어도 돼요&#10;예) [네이버지도] 초당순두부마을 … https://naver.me/…"></textarea>
+        <div id="pastePreview"></div>
+      </div>
+
+      <div class="tool-panel" id="aiPanel" hidden>
+        <p class="pane-hint">조건을 확인하고 <b>①</b>을 누르면 질문이 복사되고 Claude가 열려요. 답이 오면 맨 아래 <b>코드 상자의 [복사]</b>를 누르고 돌아와서 <b>②</b>를 눌러 주세요.</p>
+        <div class="ai-grid">
+          <label class="ai-field"><span>기간</span>
+            <select id="aiDays">
+              <option value="1">당일치기</option><option value="2">1박 2일</option><option value="3">2박 3일</option>
+              <option value="4">3박 4일</option><option value="5">4박 5일</option>
+            </select>
+          </label>
+          <label class="ai-field"><span>인원</span><span class="ai-unit"><input type="number" id="aiPeople" min="1" max="20" inputmode="numeric"> 명</span></label>
+          <label class="ai-field"><span>출발지</span><input type="text" id="aiFrom" maxlength="30" placeholder="예: 서울역"></label>
+          <label class="ai-field"><span>이동</span>
+            <select id="aiMove"><option value="car">🚗 자동차</option><option value="public">🚆 대중교통</option></select>
+          </label>
+          <label class="ai-field ai-wide"><span>1인 예산 <small>교통비 빼고</small></span><span class="ai-unit"><input type="text" id="aiBudget" inputmode="numeric" maxlength="4"> 만원</span></label>
+        </div>
+        <span class="facet-label">🎒 여행 스타일</span>
+        <div class="chips" id="aiStyles"></div>
+        <label class="ai-check" id="aiUseStopsRow"><input type="checkbox" id="aiUseStops" checked> <span id="aiUseStopsText"></span></label>
+        <textarea id="aiRequest" rows="2" maxlength="300" placeholder="요청 사항 (예: 해산물 좋아해요, 아침 일찍 출발해요)"></textarea>
+        <div class="ai-steps">
+          <button type="button" class="btn btn-primary" id="aiAsk">① 질문 복사하고 Claude 열기</button>
+          <button type="button" class="link-btn" id="aiCopyOnly">다른 AI 앱을 쓸 땐: 질문만 복사</button>
+          <button type="button" class="btn" id="aiPaste">② AI 답 붙여넣기</button>
+        </div>
+        <textarea id="aiReplyBox" rows="4" hidden placeholder="AI 답(또는 코드 상자 내용)을 여기에 길게 눌러 붙여넣어 주세요"></textarea>
+        <div id="aiPreview"></div>
+      </div>
+
+      <p class="pane-hint" id="planHint"></p>
+      <div id="planDays"></div>
+      <button type="button" class="btn btn-small btn-ghost add-day" id="addDay">＋ 하루 추가</button>
+    </div>
+
+    <div class="sheet-pane" data-pane="cost" hidden>
+      <p class="pane-hint" id="costHint"></p>
+      <div class="cost-grid" id="costGrid"></div>
+      <label class="cost-people">
+        <span>👥 함께 간 사람</span>
+        <span class="people-input"><input type="number" id="costPeople" min="1" max="50" inputmode="numeric" value="1"> 명</span>
+      </label>
+      <div class="cost-total" id="costTotal"></div>
+    </div>
+
     <div class="sheet-actions">
       <button class="btn btn-ghost" type="button" data-close>닫기</button>
       <button class="btn btn-primary" type="button" id="recSave">저장하기</button>
@@ -242,6 +338,23 @@
 </div>
 
 <!-- 사진 크게 보기 -->
+<!-- 다른 앱(지도)에서 공유받은 장소 -->
+<div class="sheet" id="shareSheet" hidden>
+  <div class="sheet-backdrop" data-close></div>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+    <div class="sheet-handle"></div>
+    <h3 class="settings-title" id="shareTitle">📥 공유받은 장소</h3>
+    <div id="shareFound"></div>
+    <span class="facet-label">어느 여행 일정에 넣을까요?</span>
+    <select id="shareTarget" class="share-select"></select>
+    <div class="share-day" id="shareDayRow"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" type="button" data-close>취소</button>
+      <button class="btn btn-primary" type="button" id="shareAdd">일정표에 넣기</button>
+    </div>
+  </div>
+</div>
+
 <div class="lightbox" id="lightbox" hidden>
   <img id="lightboxImg" alt="여행 사진">
 </div>
@@ -254,6 +367,7 @@
 <script src="js/storage.js"></script>
 <script src="js/characters.js"></script>
 <script src="js/backup.js"></script>
+<script src="js/trip-tools.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
